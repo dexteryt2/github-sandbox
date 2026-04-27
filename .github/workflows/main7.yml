@@ -1,0 +1,57 @@
+name: Download IPCleanScanner.zip (Final)
+on: workflow_dispatch
+
+jobs:
+  download:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Install yt-dlp
+        run: |
+          pip install --upgrade yt-dlp
+          
+      - name: Download from Telegram
+        run: |
+          yt-dlp \
+            --no-playlist \
+            --format "best[ext=zip]/best" \
+            --user-agent "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36" \
+            --add-header "Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8" \
+            --add-header "Accept-Language: en-US,en;q=0.5" \
+            --add-header "Cache-Control: no-cache" \
+            --add-header "Referer: https://telegram.org/" \
+            --sleep-requests 1 \
+            --sleep-interval 2 \
+            --max-sleep-interval 5 \
+            --retries 10 \
+            --fragment-retries 10 \
+            "https://t.me/asrnovin_ir/9337" \
+            -o "IPCleanScanner.%(ext)s"
+            
+      - name: Verify file
+        run: |
+          echo "=== فایل‌های دانلود شده ==="
+          ls -lh
+          
+          if [ -f "IPCleanScanner.zip" ]; then
+            SIZE=$(stat -c%s "IPCleanScanner.zip")
+            if [ $SIZE -gt 10000000 ]; then
+              echo "✅ فایل با حجم مناسب دانلود شد: $(ls -lh IPCleanScanner.zip)"
+            else
+              echo "⚠️ فایل دانلود شده ولی حجمش کمه ($SIZE bytes). احتمالاً فایل اشتباهه."
+              echo "محتوای فایل (۲۰ خط اول):"
+              head -20 IPCleanScanner.zip || file IPCleanScanner.zip
+            fi
+          else
+            echo "❌ فایل پیدا نشد. بررسی می‌کنم ببینم چه فایل‌هایی هست..."
+            find . -type f -size +1M -exec ls -lh {} \;
+          fi
+          
+      - name: Upload result
+        uses: actions/upload-artifact@v4
+        with:
+          name: ipcleanscanner-final
+          path: |
+            IPCleanScanner.*
+            *.zip
+            *.rar
+            *.mp4

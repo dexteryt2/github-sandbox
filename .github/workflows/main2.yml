@@ -1,0 +1,63 @@
+name: Download File from Telegram Post
+on: workflow_dispatch
+
+jobs:
+  download:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Install yt-dlp with Telegram support
+        run: |
+          pip install --upgrade yt-dlp
+          
+      - name: Download media/file from Telegram post
+        run: |
+          # روش اول: تلاش با گزینه مخصوص تلگرام
+          yt-dlp --verbose \
+                 --no-playlist \
+                 --format best \
+                 --user-agent "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36" \
+                 --add-header "Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8" \
+                 "https://t.me/asrnovin_ir/9337" \
+                 -o "telegram_post_file.%(ext)s" \
+                 --restrict-filenames \
+                 --no-warnings || true
+                 
+          # روش دوم: استخراج لینک مستقیم از سورس صفحه
+          wget -q -O temp_page.html "https://t.me/asrnovin_ir/9337?embed=1"
+          
+          # جستجوی لینک‌های فایل (عکس، ویدیو، سند)
+          echo "=== جستجوی لینک‌های فایل ==="
+          grep -Eo 'src="https://[^"]+\.(mp4|mkv|webm|mov|jpg|jpeg|png|gif|pdf|zip|rar|7z|doc|docx)"' temp_page.html | cut -d'"' -f2 > direct_urls.txt
+          grep -Eo 'href="https://cdn[^"]+\.(mp4|mkv|webm|mov|jpg|jpeg|png|gif|pdf|zip|rar|7z|doc|docx)"' temp_page.html | cut -d'"' -f2 >> direct_urls.txt
+          grep -Eo 'data-video="[^"]+\.mp4"' temp_page.html | cut -d'"' -f2 >> direct_urls.txt
+          
+          # دانلود اولین لینک معتبر پیدا شده
+          if [ -s direct_urls.txt ]; then
+            FIRST_URL=$(head -1 direct_urls.txt)
+            echo "Found direct URL: $FIRST_URL"
+            wget --no-check-certificate -O downloaded_file "$FIRST_URL"
+          else
+            echo "No direct URLs found in HTML"
+            # روش سوم: ذخیره کل صفحه برای بررسی
+            cp temp_page.html debug_page.html
+          fi
+          
+          # نمایش لیست فایل‌های دانلود شده
+          echo "=== فایل‌های موجود ==="
+          ls -la
+          
+      - name: Upload results
+        uses: actions/upload-artifact@v4
+        with:
+          name: telegram-file-and-debug
+          path: |
+            downloaded_file
+            telegram_post_file.*
+            *.mp4
+            *.webm
+            *.jpg
+            *.png
+            *.pdf
+            *.zip
+            debug_page.html
+            direct_urls.txt

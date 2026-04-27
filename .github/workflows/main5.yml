@@ -1,0 +1,42 @@
+name: Download Telegram File with API
+on: workflow_dispatch
+
+jobs:
+  download:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Install telegram-upload
+        run: |
+          pip install telegram-upload
+          
+      - name: Download file from public channel
+        run: |
+          # دانلود با استفاده از API عمومی
+          telegram-upload --download --file "https://t.me/asrnovin_ir/9337" --output .
+          
+      - name: Check downloaded files
+        run: |
+          echo "Files in current directory:"
+          ls -la
+          # پیدا کردن فایل ZIP
+          find . -name "*.zip" -type f
+          
+      - name: Rename if found
+        run: |
+          ZIP_FILE=$(find . -name "*.zip" -type f | head -1)
+          if [ -n "$ZIP_FILE" ]; then
+            mv "$ZIP_FILE" IPCleanScanner.zip
+            echo "File renamed successfully"
+            ls -lh IPCleanScanner.zip
+          else
+            echo "No ZIP file found"
+            ls -la
+          fi
+          
+      - name: Upload result
+        uses: actions/upload-artifact@v4
+        with:
+          name: final-file
+          path: |
+            IPCleanScanner.zip
+            *.zip

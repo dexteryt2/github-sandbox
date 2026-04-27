@@ -1,0 +1,53 @@
+name: Download Telegram ZIP File (Fixed)
+on: workflow_dispatch
+
+jobs:
+  download:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Install yt-dlp & ffmpeg
+        run: |
+          sudo apt update
+          sudo apt install -y ffmpeg
+          pip install --upgrade yt-dlp
+
+      - name: Download file with browser simulation
+        run: |
+          yt-dlp \
+            --user-agent "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36" \
+            --add-header "Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8" \
+            --add-header "Accept-Language: en-US,en;q=0.5" \
+            --add-header "Referer: https://telegram.org/" \
+            --sleep-requests 2 \
+            --min-sleep-interval 5 \
+            --max-sleep-interval 10 \
+            --retries 5 \
+            --fragment-retries 10 \
+            --no-playlist \
+            --format best \
+            "https://t.me/asrnovin_ir/9337" \
+            -o "my_file.%(ext)s"
+
+      - name: Rename if needed
+        run: |
+          # نمایش لیست کامل فایل‌ها
+          ls -la
+          # اگر فایل با اسم دیگه‌ای دانلود شد، به اسم استاندارد تغییر نام بده
+          if [ -f *.zip ]; then
+            mv *.zip final_file.zip
+          elif [ -f *.rar ]; then
+            mv *.rar final_file.rar
+          elif [ -f *.7z ]; then
+            mv *.7z final_file.7z
+          fi
+
+      - name: Upload result
+        uses: actions/upload-artifact@v4
+        with:
+          name: real-zip-file
+          path: |
+            final_file.*
+            *.zip
+            *.rar
+            *.7z
+            my_file.*

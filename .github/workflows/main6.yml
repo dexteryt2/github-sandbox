@@ -1,0 +1,50 @@
+name: Force Download Telegram File
+on: workflow_dispatch
+
+jobs:
+  download:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download with real browser fingerprint
+        run: |
+          wget --header="User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36" \
+               --header="Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8" \
+               --header="Accept-Language: en-US,en;q=0.9" \
+               --header="Cache-Control: max-age=0" \
+               --header="Connection: keep-alive" \
+               --header="Sec-Fetch-Dest: document" \
+               --header="Sec-Fetch-Mode: navigate" \
+               --header="Sec-Fetch-Site: none" \
+               --header="Sec-Fetch-User: ?1" \
+               --header="Upgrade-Insecure-Requests: 1" \
+               --header="Referer: https://telegram.org/" \
+               --no-check-certificate \
+               -O post_page.html \
+               "https://t.me/asrnovin_ir/9337?embed=1&single=1"
+          
+          echo "Page downloaded. Searching for file link..."
+          grep -Eo 'https://cdn[^"]+\.(zip|rar|7z|mp4|mkv|webm)' post_page.html > direct_links.txt
+          cat direct_links.txt
+
+      - name: Try each direct link
+        run: |
+          if [ -s direct_links.txt ]; then
+            while IFS= read -r link; do
+              echo "Trying: $link"
+              wget --no-check-certificate --timeout=30 --tries=3 -O IPCleanScanner.zip "$link" && break
+            done < direct_links.txt
+          else
+            echo "No direct link found. Saving HTML for inspection."
+            cp post_page.html debug.html
+          fi
+          
+          ls -lh
+
+      - name: Upload final result
+        uses: actions/upload-artifact@v4
+        with:
+          name: telegram-file
+          path: |
+            IPCleanScanner.zip
+            *.zip
+            debug.html

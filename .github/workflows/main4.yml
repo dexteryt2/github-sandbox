@@ -1,0 +1,48 @@
+name: Download IPCleanScanner.zip from Telegram
+on: workflow_dispatch
+
+jobs:
+  download:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download Telegram page
+        run: |
+          curl -L -o page.html "https://t.me/asrnovin_ir/9337?embed=1"
+          echo "Page downloaded"
+          
+      - name: Extract direct download link
+        run: |
+          # جستجو برای لینک فایل ZIP
+          grep -Eo 'https://cdn[^"]+\.zip' page.html > links.txt
+          cat links.txt
+          
+      - name: Download the file
+        run: |
+          if [ -s links.txt ]; then
+            LINK=$(head -1 links.txt)
+            echo "Downloading from: $LINK"
+            curl -L -o IPCleanScanner.zip "$LINK"
+          else
+            echo "No link found. Saving page for debugging"
+            cp page.html debug.html
+          fi
+          
+      - name: Check file size
+        run: |
+          if [ -f IPCleanScanner.zip ]; then
+            echo "File downloaded successfully!"
+            ls -lh IPCleanScanner.zip
+          else
+            echo "Download failed"
+            ls -la
+          fi
+          
+      - name: Upload result
+        uses: actions/upload-artifact@v4
+        with:
+          name: ipcleanscanner-output
+          path: |
+            IPCleanScanner.zip
+            *.zip
+            *.html
+            links.txt

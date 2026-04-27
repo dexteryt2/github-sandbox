@@ -1,0 +1,18 @@
+name: Download from Telegram
+on: workflow_dispatch
+
+jobs:
+  download:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Install yt-dlp
+        run: pip install yt-dlp
+      
+      - name: Download file
+        run: yt-dlp "https://t.me/asrnovin_ir/9337" -o "telegram_file.%(ext)s"
+      
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: downloaded-file
+          path: telegram_file.*
